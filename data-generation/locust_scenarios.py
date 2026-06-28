@@ -68,9 +68,23 @@ def _ensure_log_header(log_path: Path) -> None:
 
 
 def _append_log(log_path: Path, start: str, end: str, scenario_type: str) -> None:
+    try:
+        import fcntl
+        has_fcntl = True
+    except ImportError:
+        has_fcntl = False
+
     with open(log_path, "a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([start, end, scenario_type])
+        if has_fcntl:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            writer = csv.writer(f)
+            writer.writerow([start, end, scenario_type])
+            f.flush()
+            os.fsync(f.fileno())
+        finally:
+            if has_fcntl:
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def _utcnow_iso() -> str:

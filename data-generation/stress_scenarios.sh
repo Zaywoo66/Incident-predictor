@@ -31,7 +31,13 @@ log_scenario() {
 
     local end_time
     end_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    echo "$start_time,$end_time,$scenario_type" >> "$EXPERIMENTS_LOG"
+
+    # Atomic append via flock
+    (
+        flock -x 200
+        echo "$start_time,$end_time,$scenario_type" >> "$EXPERIMENTS_LOG"
+    ) 200>"${EXPERIMENTS_LOG}.lock"
+
     echo "[*] Finished scenario: $scenario_type at $end_time"
 }
 
