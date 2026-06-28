@@ -108,19 +108,18 @@ def is_incident_timestamp(ts: datetime, experiments: pd.DataFrame) -> int:
 # ---------------------------------------------------------------------------
 
 def compute_deploy_flag(experiments: pd.DataFrame, timestamps: list[datetime]) -> list[int]:
-    """Heuristic: set deploy_flag=1 for timestamps near experiment boundaries.
+    """Set deploy_flag=1 if timestamp falls within any deploy scenario interval.
 
-    In a real setup this would come from a CI/CD webhook. Here we approximate
-    it by flagging the 2-minute window around each scenario start.
+    Matches scenario_type starting with 'deploy'.
     """
     flags = []
     for ts in timestamps:
         flag = 0
         for _, row in experiments.iterrows():
-            delta = abs((ts - row["start_time"]).total_seconds())
-            if delta <= 120:  # within 2 minutes of scenario start
-                flag = 1
-                break
+            if str(row["scenario_type"]).startswith("deploy"):
+                if row["start_time"] <= ts <= row["end_time"]:
+                    flag = 1
+                    break
         flags.append(flag)
     return flags
 
