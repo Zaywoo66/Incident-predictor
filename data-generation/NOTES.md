@@ -10,3 +10,7 @@ None.
 - **Normal-traffic exclusion**: Scenarios named `locust_normal` and `cpu_low` are intentionally excluded from incident labeling even though they appear in the experiment log — they represent baseline traffic, not incidents.
 - **deploy_flag heuristic**: In absence of a real CI/CD webhook, `deploy_flag=1` is set for timestamps within 2 minutes of a scenario start. This approximates deployment-triggered incidents.
 - **Context window**: The collector adds a configurable margin (default: 10 minutes) before the earliest and after the latest experiment to capture normal-operation baseline data around incidents.
+
+## TODOs
+
+- **TODO**: После реального прогона экспериментов (на этапе интеграции/деплоя) проверить соотношение классов в `incident_label` — целевое примерно 70-80% normal / 20-30% incident. Если сильный перекос — добавить больше normal-интервалов или скорректировать длительность стресс-сценариев.
