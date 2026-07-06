@@ -60,7 +60,7 @@ def mock_models():
         yield app
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_health(mock_models):
     transport = ASGITransport(app=mock_models)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -69,7 +69,7 @@ async def test_health(mock_models):
     assert response.json() == {"status": "ok"}
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_predict_valid(mock_models):
     transport = ASGITransport(app=mock_models)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -85,7 +85,7 @@ async def test_predict_valid(mock_models):
     assert isinstance(data["shap_values"], dict)
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_predict_empty_points(mock_models):
     transport = ASGITransport(app=mock_models)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
