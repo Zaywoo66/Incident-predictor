@@ -1,12 +1,11 @@
-from unittest.mock import MagicMock, patch
+import sys
+from unittest.mock import MagicMock
 
 import numpy as np
+import pandas as pd
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-# Number of features produced by FeatureEngineer for 5 metric columns:
-# Each column gets 4 derived features (mean, std, lag1, roc) = 20
-# Plus original 6 columns (cpu, ram, latency, disk_io, network_io, deploy_flag) = 26
 _NUM_FEATURES = 26
 
 
@@ -16,9 +15,6 @@ def _make_mock_models():
     mock_model.predict_proba.return_value = np.array([[0.3, 0.7]])
 
     mock_pipeline = MagicMock()
-    # transform returns a DataFrame-like object with .iloc and .columns
-    import pandas as pd
-
     fake_features = pd.DataFrame(
         np.random.rand(1, _NUM_FEATURES),
         columns=[f"feat_{i}" for i in range(_NUM_FEATURES)],
@@ -52,12 +48,44 @@ def _make_points(n: int = 10) -> list[dict]:
 @pytest.fixture()
 def mock_models():
     mock_model, mock_pipeline, mock_explainer = _make_mock_models()
-    with patch("model_loader.load_models") as mock_load:
-        mock_load.return_value = (mock_model, mock_pipeline, mock_explainer)
-        # Import app after patching so lifespan uses the mock
-        from main import app
 
-        yield app
+    # Mock heavy modules that model_loader imports at the top level
+    # so tests run without the full ML stack installed
+    mock_shap = MagicMock()
+    mock_joblib = MagicMock()
+    original_modules = {}
+    for mod_name in ("shap", "joblib"):
+        original_modules[mod_name] = sys.modules.get(mod_name)
+        sys.modules[mod_name] = mock_shap if mod_name == "shap" else mock_joblib
+
+    # Clear cached imports so model_loader and main reload with mocks
+    for mod_name in ("model_loader", "main"):
+        sys.modules.pop(mod_name, None)
+
+    import model_loader
+
+    model_loader.load_models = MagicMock(
+        return_value=(mock_model, mock_pipeline, mock_explainer)
+    )
+
+    sys.modules.pop("main", None)
+    from main import app
+
+    # ASGITransport doesn't trigger lifespan, so populate state manually
+    app.state.model = mock_model
+    app.state.feature_pipeline = mock_pipeline
+    app.state.explainer = mock_explainer
+
+    yield app
+
+    # Restore original modules
+    for mod_name, original in original_modules.items():
+        if original is None:
+            sys.modules.pop(mod_name, None)
+        else:
+            sys.modules[mod_name] = original
+    for mod_name in ("model_loader", "main"):
+        sys.modules.pop(mod_name, None)
 
 
 @pytest.mark.asyncio
