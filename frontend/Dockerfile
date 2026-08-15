@@ -14,7 +14,9 @@ RUN npm ci
 
 COPY . .
 
+ARG VITE_API_URL=http://localhost:8000
 ARG VITE_USE_MOCK=true
+ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_USE_MOCK=$VITE_USE_MOCK
 
 RUN npm run build
