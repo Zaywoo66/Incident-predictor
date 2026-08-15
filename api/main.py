@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from model_loader import load_models
 from schemas import HealthResponse, PredictRequest, PredictResponse
@@ -18,6 +19,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Incident Predictor API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # для локальной разработки; сузить в проде
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health", response_model=HealthResponse)
