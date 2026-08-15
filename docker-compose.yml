@@ -87,6 +87,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        VITE_API_URL: http://localhost:8000
         VITE_USE_MOCK: "false"
     container_name: incident-frontend
     ports:
