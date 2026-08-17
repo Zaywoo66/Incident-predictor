@@ -27,3 +27,19 @@ python collector.py --prometheus-url http://localhost:9090
 ```
 
 Output: `data/raw/metrics_labeled.csv`
+
+## Target service
+
+`target_service/` is a lightweight FastAPI app that Locust sends requests to.
+It simulates realistic latency (10–300 ms) and CPU load.
+
+### Running the target service
+
+| Environment | Host flag for `locust_scenarios.py` |
+|---|---|
+| **Docker Compose** (recommended) | `--host http://target-service:8080` (container name inside `incident-net`) |
+| **Local** (outside Docker) | `--host http://localhost:8081` (mapped port on the host) |
+
+> **Note:** Inside `docker-compose.yml` the host port is `8081` because cAdvisor
+> already occupies `8080`. Within the Docker network containers reach the service
+> at `target-service:8080`.
