@@ -64,3 +64,14 @@ services:
     depends_on:
       - prometheus
     restart: unless-stopped
+
+  target-service:
+    build:
+      context: ../data-generation/target_service
+      dockerfile: Dockerfile
+    container_name: target-service
+    ports:
+      - "8081:8080"
+    networks:
+      - incident-net
+    restart: unless-stopped
